@@ -1,0 +1,82 @@
+name: Deploy Client Dashboard Backend
+
+on:
+  push:
+    branches:
+      - development
+
+jobs:
+  build:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Define Image Tags
+        id: vars
+        run: |
+          SHA_TAG=${GITHUB_SHA::7}
+          echo "sha_tag=$SHA_TAG" >> $GITHUB_ENV
+      
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ghcr.io/covlant/client_dashboard_backend:dev
+            ghcr.io/covlant/client_dashboard_backend:${{ env.sha_tag }}
+            ghcr.io/covlant/client_dashboard_backend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          labels: |
+            org.opencontainers.image.source=https://github.com/covlant/client_dashboard_backend
+            org.opencontainers.image.revision=${{ github.sha }}
+
+    outputs:
+      sha_tag: ${{ env.sha_tag }}
+
+  deploy:
+    name: Deploy to Nomad
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      NOMAD_ADDR: "http://74.50.126.215:4646"
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Nomad Pack
+        uses: hashicorp/setup-nomad-pack@main
+        with:
+          version: 0.1.2
+
+      - name: Deploy to Nomad
+        run: |
+          echo "-----------------------------------"
+          echo "Deploying Dashboard Backend with version tag: ${{ needs.build.outputs.sha_tag }}"
+          echo "-----------------------------------"
+
+          cd ./packs
+          NOMAD_ADDR=${{ env.NOMAD_ADDR }} NOMAD_TOKEN=${{ secrets.NOMAD_TOKEN }} nomad-pack run dashboard_backend \
+            --var "nomad_task_image_tag=${{ needs.build.outputs.sha_tag }}" \
+            --var env="dev" \
+            --var nomad_job_name="dashboard-backend-dev"

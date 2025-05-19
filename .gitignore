@@ -1,0 +1,45 @@
+# Go-related ignores
+
+# Binaries for programs and plugins
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Output of the build process
+/bin/
+/build/
+*.out
+
+# Dependency directories (vendor-specific)
+vendor/
+
+# Go test binary
+*.test
+
+# Logs and debug files
+*.log
+*.trace
+
+# Environment variables
+
+# Go cache files
+*.cache/
+*.tmp/
+
+# Coverage files
+*.cover
+*.cov
+coverage.out
+
+# Module cache (if explicitly created locally)
+go.sum.tmp
+
+# Miscellaneous ignores
+# Temporary or working files
+*.bak
+*.swp
+
+# System-specific files
+.DS_Store
+Thumbs.db

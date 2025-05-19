@@ -1,0 +1,11 @@
+version: '3.9'
+
+services:
+  app:
+    build: .
+    image: go_backend
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    restart: always
