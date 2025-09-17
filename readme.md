@@ -44,4 +44,4 @@ go run main.go
   go mod tidy
   ```
 
-Happy coding! 🚀
+Happy coding dude! 🚀
